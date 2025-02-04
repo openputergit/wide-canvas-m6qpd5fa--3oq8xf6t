@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>पुस्तकालय प्रबंधन प्रणाली</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        * {
+            font-family: 'Poppins', sans-serif;
+        }
+        .hindi {
+            font-family: 'Poppins', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-blue-50">
+    <div class="container mx-auto p-4">
+        <h1 class="text-3xl font-bold text-center text-blue-800 mb-8">पुस्तकालय प्रबंधन प्रणाली</h1>
+        
+        <!-- Add Book Form -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4">नई पुस्तक जोड़ें</h2>
+            <form id="addBookForm" class="space-y-4">
+                <div>
+                    <label class="block mb-2">पुस्तक का नाम:</label>
+                    <input type="text" id="bookName" required class="w-full p-2 border rounded">
+                </div>
+                <div>
+                    <label class="block mb-2">लेखक का नाम:</label>
+                    <input type="text" id="authorName" required class="w-full p-2 border rounded">
+                </div>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                    पुस्तक जोड़ें
+                </button>
+            </form>
+        </div>
+
+        <!-- Lend Book Form -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4">पुस्तक उधार दें</h2>
+            <form id="lendBookForm" class="space-y-4">
+                <div>
+                    <label class="block mb-2">पुस्तक चुनें:</label>
+                    <select id="bookSelect" required class="w-full p-2 border rounded">
+                    </select>
+                </div>
+                <div>
+                    <label class="block mb-2">उधारकर्ता का नाम:</label>
+                    <input type="text" id="borrowerName" required class="w-full p-2 border rounded">
+                </div>
+                <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                    उधार दें
+                </button>
+            </form>
+        </div>
+
+        <!-- Books List -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold mb-4">पुस्तकों की सूची</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full table-auto">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="p-2 text-left">पुस्तक का नाम</th>
+                            <th class="p-2 text-left">लेखक</th>
+                            <th class="p-2 text-left">स्थिति</th>
+                            <th class="p-2 text-left">उधारकर्ता</th>
+                            <th class="p-2 text-left">कार्य</th>
+                        </tr>
+                    </thead>
+                    <tbody id="booksList">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let books = JSON.parse(localStorage.getItem('books')) || [];
+
+        function saveBooks() {
+            localStorage.setItem('books', JSON.stringify(books));
+        }
+
+        function updateBooksList() {
+            const booksList = document.getElementById('booksList');
+            const bookSelect = document.getElementById('bookSelect');
+            booksList.innerHTML = '';
+            bookSelect.innerHTML = '<option value="">पुस्तक चुनें</option>';
+
+            books.forEach((book, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="p-2">${book.name}</td>
+                    <td class="p-2">${book.author}</td>
+                    <td class="p-2">${book.borrowed ? 'उधार पर' : 'उपलब्ध'}</td>
+                    <td class="p-2">${book.borrower || '-'}</td>
+                    <td class="p-2">
+                        ${book.borrowed ? 
+                            `<button onclick="returnBook(${index})" class="text-blue-600 hover:text-blue-800">
+                                <i class="bi bi-arrow-return-left"></i> वापस लें
+                            </button>` : 
+                            '-'
+                        }
+                    </td>
+                `;
+                booksList.appendChild(row);
+
+                if (!book.borrowed) {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = book.name;
+                    bookSelect.appendChild(option);
+                }
+            });
+        }
+
+        document.getElementById('addBookForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const bookName = document.getElementById('bookName').value;
+            const authorName = document.getElementById('authorName').value;
+
+            books.push({
+                name: bookName,
+                author: authorName,
+                borrowed: false,
+                borrower: null
+            });
+
+            saveBooks();
+            updateBooksList();
+            e.target.reset();
+        });
+
+        document.getElementById('lendBookForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const bookIndex = document.getElementById('bookSelect').value;
+            const borrowerName = document.getElementById('borrowerName').value;
+
+            if (bookIndex !== '') {
+                books[bookIndex].borrowed = true;
+                books[bookIndex].borrower = borrowerName;
+                saveBooks();
+                updateBooksList();
+                e.target.reset();
+            }
+        });
+
+        function returnBook(index) {
+            books[index].borrowed = false;
+            books[index].borrower = null;
+            saveBooks();
+            updateBooksList();
+        }
+
+        // Initial render
+        updateBooksList();
+    </script>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
